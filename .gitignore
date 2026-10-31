@@ -1,0 +1,24 @@
+# 运行产物（只忽略仓库根目录的，screenshots/ 里的图要提交）
+/config.json
+/monitor.log
+/worker.log
+/preview.png
+/artifacts/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# 打包
+/dist/
+/build/
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

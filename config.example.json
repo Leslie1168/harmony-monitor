@@ -1,0 +1,28 @@
+{
+  "devices": [
+    {
+      "addr": "192.168.1.23:5555",
+      "type": "adb"
+    },
+    {
+      "addr": "192.168.1.24:43891",
+      "type": "hdc"
+    }
+  ],
+  "selected": [
+    "cpu",
+    "load",
+    "mem_pct",
+    "storage_pct",
+    "battery",
+    "batt_temp",
+    "batt_state",
+    "wifi_rssi",
+    "uptime"
+  ],
+  "window": {},
+  "appearance": {
+    "mode": "tabs",
+    "topmost": true
+  }
+}

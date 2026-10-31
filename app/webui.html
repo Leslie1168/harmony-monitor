@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<style>
+  :root{
+    --text:#EDF3FD; --sub:#93A2BB; --dim:#5F6E88;
+    --ok:#3EDBA4; --warn:#F2B84B; --bad:#FF6D7F;
+    --cpu:#5B8CFF; --mem:#A78BFA;
+    --stroke:rgba(255,255,255,.09);
+    --alpha:0.92; --cardw:330px; --appfont:'Microsoft YaHei UI';
+  }
+  *{margin:0;padding:0;box-sizing:border-box;user-select:none}
+  html,body{background:transparent}
+  body{color:var(--text);font-family:var(--appfont),"PingFang SC",sans-serif;overflow:hidden}
+  .glass{
+    background:linear-gradient(160deg,
+      rgba(26,35,56,var(--alpha)),rgba(10,15,26,var(--alpha)));
+    border:1px solid rgba(158,190,240,calc(var(--alpha)*.16));
+    border-radius:20px;overflow:hidden;
+  }
+  button{font-family:inherit;border:none;background:none;color:inherit;cursor:pointer}
+  .dot{width:7px;height:7px;border-radius:50%;flex:none}
+  .dot.ok{background:var(--ok);box-shadow:0 0 8px rgba(62,219,164,.7)}
+  .dot.warn{background:var(--warn);box-shadow:0 0 8px rgba(242,184,75,.7)}
+  .dot.bad{background:var(--bad);box-shadow:0 0 8px rgba(255,109,127,.7)}
+  .dot.off{background:#5b6472;box-shadow:none}
+
+  /* ---------- 头部 / 分段 / 标签栏 ---------- */
+  .head{display:flex;align-items:center;gap:8px;padding:13px 16px 0 16px;white-space:nowrap}
+  .brand{width:22px;height:22px;border-radius:7px;flex:none;
+    background:linear-gradient(135deg,var(--cpu),#46D8C4);position:relative}
+  .brand::after{content:'';position:absolute;left:5px;top:7px;width:12px;height:8px;
+    border-radius:2px;background:rgba(10,16,28,.9)}
+  .head .title{font-size:13px;font-weight:700;white-space:nowrap}
+  .head .summary{font-size:10.5px;color:var(--ok);white-space:nowrap}
+  .head .sp{flex:1}
+  .seg{display:flex;gap:2px;background:rgba(255,255,255,.055);border-radius:10px;padding:3px;flex:none}
+  .seg button{font-size:11px;color:#93A2BB;padding:4px 11px;border-radius:7px;white-space:nowrap}
+  .seg button:hover{color:#E4ECFA}
+  .seg button.on{color:#fff;font-weight:600;
+    background:linear-gradient(135deg,#5B8CFF,#3FA7C9)}
+  .ib{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+    font-size:13px;color:#93A2BB;flex:none}
+  .ib:hover{background:rgba(255,255,255,.09);color:#fff}
+  .tabbar{display:flex;align-items:center;gap:6px;padding:12px 16px 0 16px;white-space:nowrap}
+  .tabbar .sp{flex:1}
+  .dtab{display:flex;align-items:center;gap:7px;font-size:12px;color:#93A2BB;
+    padding:7px 15px;border-radius:10px 10px 0 0;border:1px solid transparent;border-bottom:none;
+    white-space:nowrap;flex:none}
+  .dtab:hover{color:var(--text);background:rgba(255,255,255,.04)}
+  .dtab.on{color:#fff;font-weight:600;background:rgba(91,140,255,.16);border-color:rgba(91,140,255,.3)}
+  .btnpill{font-size:11px;color:#93A2BB;background:rgba(255,255,255,.05);
+    border:1px solid var(--stroke);border-radius:8px;padding:5px 14px;white-space:nowrap;flex:none}
+  .btnpill:hover{color:#fff;background:rgba(91,140,255,.18)}
+
+  .body{padding:14px 18px 16px 18px}
+  .cardgrid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+
+  /* ---------- 设备卡片 ---------- */
+  .card{width:var(--cardw);border-radius:18px;padding:16px 16px 14px;
+    background:rgba(255,255,255,.035);border:1px solid var(--stroke)}
+  .card .chead{display:flex;align-items:center;gap:9px}
+  .card .cname{font-size:14px;font-weight:700;letter-spacing:.3px}
+  .card .cmodel{font-size:10px;color:var(--dim)}
+  .card .cextra{margin-left:auto;font-size:10.5px;color:var(--sub);white-space:nowrap}
+  .card .cextra .hot{color:var(--warn)}
+  .mrow{display:grid;grid-template-columns:56px 1fr 92px;align-items:center;gap:11px;margin-top:13px}
+  .mrow .lab{font-size:11.5px;color:var(--sub)}
+  .bar{height:9px;border-radius:99px;background:rgba(255,255,255,.06);overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:99px;transition:width .4s}
+  .mrow .val{font-size:12px;text-align:right;white-space:nowrap}
+  .mrow .val small{display:block;font-size:9.5px;color:var(--dim);margin-top:1px}
+  .card .cfoot{margin-top:14px;padding-top:11px;border-top:1px solid rgba(255,255,255,.06);
+    display:flex;justify-content:space-between;font-size:10.5px;color:var(--dim)}
+  .card .cfoot b{color:var(--sub);font-weight:600}
+
+  /* ---------- 迷你 ---------- */
+  .mini{position:relative;width:350px;height:190px}
+  .mhead{display:flex;align-items:center;gap:8px;padding:11px 12px 0 12px;white-space:nowrap}
+  .mtabs{display:flex;gap:4px;min-width:0}
+  .mtab{display:flex;align-items:center;gap:5px;font-size:10px;color:#93A2BB;
+    padding:3px 9px;border-radius:7px;border:1px solid transparent;white-space:nowrap}
+  .mtab:hover{background:rgba(255,255,255,.06);color:var(--text)}
+  .mtab.on{color:#fff;background:rgba(91,140,255,.2);border-color:rgba(91,140,255,.35)}
+  .mtab .mtxt{max-width:88px;overflow:hidden;text-overflow:ellipsis}
+  .mtab .sdot{width:5px;height:5px;border-radius:50%;flex:none}
+  .mtab input{width:58px;font-size:10px;color:#fff;background:rgba(10,15,26,.96);
+    border:1px solid rgba(91,140,255,.6);border-radius:6px;padding:2px 4px;text-align:center;
+    outline:none;user-select:text}
+  .mbtns{margin-left:auto;display:flex;gap:6px;flex:none}
+  .mbtn.on{color:#fff;background:rgba(62,219,164,.25);border-color:rgba(62,219,164,.5)}
+  .ehead{display:flex;align-items:center;margin-bottom:12px}
+  .ehead .ecap{font-size:12px;color:var(--sub);letter-spacing:1px}
+  .ehead .btnpill{margin-left:10px}
+  .mmenu{position:absolute;top:38px;right:10px;z-index:30;min-width:112px;
+    background:rgba(10,15,26,.97);border:1px solid var(--stroke);border-radius:10px;
+    padding:5px;display:flex;flex-direction:column;gap:2px}
+  .mmenu[hidden]{display:none}
+  .mitem{font-size:11px;color:var(--sub);padding:6px 12px;border-radius:7px;
+    white-space:nowrap;cursor:pointer}
+  .mitem:hover{background:rgba(91,140,255,.2);color:#fff}
+  .mitem.on{color:#fff;background:rgba(91,140,255,.28);font-weight:600}
+  .mbtn{width:22px;height:22px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+    font-size:12px;color:#93A2BB;border:1px solid var(--stroke)}
+  .mbtn:hover{color:#fff;background:rgba(91,140,255,.18)}
+  .rings{display:flex;justify-content:space-evenly;align-items:center;margin-top:12px}
+  .ring{position:relative;width:104px;height:104px}
+  .ring svg{width:104px;height:104px;transform:rotate(-90deg)}
+  .ring .track{fill:none;stroke:rgba(255,255,255,.07);stroke-width:13}
+  .ring .val{fill:none;stroke-width:13;stroke-linecap:round;transition:stroke-dashoffset .5s,stroke .5s}
+  .ring .num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .ring .num b{font-size:25px;font-weight:700;letter-spacing:-.5px;line-height:1;
+    text-shadow:0 1px 2px rgba(0,0,0,.65)}
+  .ring .num span{font-size:10px;color:var(--sub);margin-top:4px;letter-spacing:1px;
+    text-shadow:0 1px 2px rgba(0,0,0,.65)}
+  .ring .num .bolt{font-size:10px;color:var(--ok);margin-top:1px}
+  @keyframes breathe{0%,100%{opacity:1}50%{opacity:.4}}
+  .breathe .val{animation:breathe 1.5s ease-in-out infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .orbit{position:absolute;left:-7px;top:-7px;width:118px;height:118px;animation:spin 5s linear infinite}
+  .offline{filter:grayscale(.92) brightness(.78)}
+  .offline .num b{color:#9aa3b2}
+  .mgrid{display:flex;gap:10px}
+
+  /* ---------- 悬停详情条 ---------- */
+  .detail{position:absolute;left:10px;right:10px;bottom:8px;border-radius:11px;
+    background:rgba(7,11,20,.94);border:1px solid rgba(255,255,255,.11);
+    display:flex;justify-content:space-between;padding:8px 13px;
+    font-size:10.5px;color:var(--sub);opacity:0;transform:translateY(12px);
+    transition:opacity .25s,transform .25s;pointer-events:none}
+  .mini:hover .detail{opacity:1;transform:none}
+  .detail b{color:var(--text);font-weight:600;margin-left:4px}
+
+  .expand-wrap{border-radius:20px;padding:14px 16px 16px;
+    background:linear-gradient(160deg,rgba(21,29,48,var(--alpha)),rgba(9,13,24,var(--alpha)));
+    border:1px solid var(--stroke)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+<script>
+'use strict';
+const OK='#3EDBA4', WARN='#F2B84B', BAD='#FF6D7F',
+      CPU='#5B8CFF', MEM='#A78BFA', BATT='#3EDBA4', GRAY='#8B93A5';
+let bridge = null, S = null;          // S = 最新状态
+let structKey = '';
+
+new QWebChannel(qt.webChannelTransport, ch => { bridge = ch.objects.bridge; });
+
+/* ---------------- 工具 ---------------- */
+const esc = s => String(s ?? '').replace(/[&<>"']/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const devName = d => (d.data && d.data.name || d.name || d.addr).replace(/^HUAWEI /,'');
+const ringColor = (base, v, warnAt, badAt) => {
+  if (typeof v !== 'number') return base;
+  if (v >= badAt) return BAD;
+  if (v >= warnAt) return WARN;
+  return base;
+};
+const battColor = v => typeof v !== 'number' ? BATT :
+  (v <= 20 ? BAD : v <= 35 ? WARN : BATT);
+function fmtVal(id, v, item) {
+  if (v === null || v === undefined || v === '') return '—';
+  if (typeof v !== 'number') return esc(v);
+  if (['mem_used','mem_free','storage_free'].includes(id)) return v.toFixed(1) + ' GB';
+  if (id === 'storage_total') return Math.round(v) + ' GB';
+  if (id === 'batt_volt') return v.toFixed(2) + ' V';
+  if (id === 'batt_cur') return Math.round(v) + ' mA';
+  if (id === 'wifi_rssi') return v + ' dBm';
+  if (id === 'wifi_speed') return v + ' Mbps';
+  if (id === 'brightness') return v + '/255';
+  const dec = item && item.decimals != null ? item.decimals : 1;
+  const unit = item && item.unit || '';
+  if (unit === '%') return v.toFixed(dec) + '%';
+  if (unit) return v.toFixed(dec) + ' ' + unit;
+  return Number.isInteger(v) ? String(v) : v.toFixed(1);
+}
+const itemOf = id => (S.items || []).find(i => i.id === id) || {id, label:id};
+const statusColor = st => st === 'online' ? OK : st === 'connecting' ? WARN : BAD;
+const ringSvg = k => `
+  <svg viewBox="0 0 104 104">
+    <circle class="track" cx="52" cy="52" r="42"/>
+    <circle class="val" data-ring="${k}" cx="52" cy="52" r="42"
+      stroke-dasharray="264" stroke-dashoffset="264"/>
+  </svg>`;
+const segHtml = cur => `<div class="seg">${[['full', '完整'], ['tabs', '标签'], ['mini', '迷你']]
+  .map(([m, n]) => `<button data-mode="${m}" class="${m === cur ? 'on' : ''}">${n}</button>`).join('')}</div>`;
+const MODE_NAMES = {full: '完整面板', tabs: '标签页', mini: '迷你模式', mini3: '三台并排'};
+const detailHtml = d => {
+  if (d.status === 'online') {
+    const t = d.data;
+    return `<span>温度<b>${fmtVal('batt_temp', t.batt_temp, itemOf('batt_temp'))}</b></span>
+      <span>WiFi<b>${fmtVal('wifi_rssi', t.wifi_rssi, itemOf('wifi_rssi'))}</b></span>
+      <span>存储<b>${fmtVal('storage_pct', t.storage_pct, itemOf('storage_pct'))}</b></span>
+      <span>运行<b>${esc(t.uptime ?? '—')}</b></span>`;
+  }
+  if (d.status === 'connecting') return '<span>状态<b>连接中…</b></span>';
+  return `<span>状态<b>离线</b></span><span>地址<b>${esc(d.addr)}</b></span>`;
+};
+
+/* ---------------- 结构渲染 ---------------- */
+function setRing(el, v, color, breathe, gray, numColor) {
+  el.querySelector('.val').setAttribute('stroke', gray ? GRAY : color);
+  el.querySelector('.val').setAttribute('stroke-dashoffset',
+    v == null ? 264 : (264 * (1 - Math.max(0, Math.min(100, v)) / 100)).toFixed(1));
+  el.classList.toggle('breathe', !!breathe);
+  el.querySelector('.num b').style.color = gray ? '#9AA3B2' : numColor;
+  el.querySelector('.num b').textContent = v == null ? '—' : Math.round(v);
+}
+function paintMini(el, d) {
+  const t = d.data || {}, on = d.status === 'online', gray = !on;
+  const charging = on && t.batt_state === '充电中';
+  const cpu = ringColor(CPU, t.cpu, 70, 90);
+  const mem = ringColor(MEM, t.mem_pct, 70, 85);
+  const bat = battColor(t.battery);
+  const bad = v => typeof v === 'number' && !gray &&
+    ((v >= 90) || (v >= 85 && false) || (v <= 20));
+  const cBreathe = typeof t.cpu === 'number' && t.cpu >= 90 && !gray;
+  const mBreathe = typeof t.mem_pct === 'number' && t.mem_pct >= 85 && !gray;
+  const bBreathe = typeof t.battery === 'number' && t.battery <= 20 && !gray;
+  const anyBreathe = cBreathe || mBreathe || bBreathe;
+  setRing(el.querySelector('[data-k=cpu]'), on ? t.cpu : t.cpu, cpu, cBreathe, gray,
+    cBreathe ? BAD : 'var(--text)');
+  setRing(el.querySelector('[data-k=mem]'), t.mem_pct, mem, mBreathe, gray,
+    mBreathe ? WARN : 'var(--text)');
+  setRing(el.querySelector('[data-k=batt]'), t.battery, bat, bBreathe, gray,
+    bBreathe ? BAD : 'var(--text)');
+  // 充电光圈
+  let orbit = el.querySelector('.orbit');
+  if (charging && !orbit) {
+    el.querySelector('[data-k=batt]').insertAdjacentHTML('afterbegin',
+      `<svg class="orbit" viewBox="0 0 104 104">
+        <circle cx="52" cy="52" r="49" fill="none" stroke="${OK}" stroke-width="2.5"
+          stroke-dasharray="3 10" stroke-linecap="round" opacity=".85"/></svg>`);
+  } else if (!charging && orbit) orbit.remove();
+  const bolt = el.querySelector('[data-k=batt] .num .bolt');
+  if (bolt) bolt.style.display = charging ? '' : 'none';
+  el.classList.toggle('offline', gray);
+  const dot = el.querySelector('.mdot');
+  if (dot) dot.className = 'dot mdot ' + (on ? 'ok' : d.status === 'connecting' ? 'warn' : 'off');
+  const tag = el.querySelector('.tagline');
+  if (tag) tag.style.display = gray && d.status === 'offline' ? '' : 'none';
+  const det = el.querySelector('.detail');
+  if (det) det.innerHTML = detailHtml(d);
+}
+function miniHtml(d, compact) {
+  return `<div class="glass mini" data-addr="${esc(d.addr)}" ${compact ? 'data-compact="1"' : ''}>
+    <div class="mhead">
+      ${compact ? `<span class="dot mdot ok"></span>
+        <span class="mname" style="font-size:11.5px;font-weight:600">${esc(d.label)}</span>`
+      : `<div class="mtabs">${S.devices.map(x => `
+          <span class="mtab${x.addr === d.addr ? ' on' : ''}" data-tab="${esc(x.addr)}"
+                title="${esc(devName(x))}">
+            <span class="mtxt">${esc(x.label)}</span><i class="sdot" style="background:${statusColor(x.status)}"></i>
+          </span>`).join('')}</div>
+        <div class="mbtns">
+          <button class="mbtn ${S.appearance.topmost ? 'on' : ''}" data-act="pin"
+                  title="${S.appearance.topmost ? '取消固定' : '固定在桌面（始终可见）'}">📌</button>
+          <button class="mbtn" data-act="expand" title="扩展：三台设备并排">⤢</button>
+          <button class="mbtn" data-act="modeMenu" title="切换显示模式">⇄</button>
+          <button class="mbtn" data-act="minimize" title="最小化到托盘">–</button>
+          <button class="mbtn" data-act="quit" title="退出监控">×</button>
+        </div>`}
+    </div>
+    <div class="rings">
+      <div class="ring" data-k="cpu">${ringSvg('cpu')}
+        <div class="num"><b>—</b><span>CPU %</span></div></div>
+      <div class="ring" data-k="mem">${ringSvg('mem')}
+        <div class="num"><b>—</b><span>内存 %</span></div></div>
+      <div class="ring" data-k="batt">${ringSvg('batt')}
+        <div class="num"><b>—</b><span>电量 %</span><span class="bolt">⚡ 充电中</span></div></div>
+    </div>
+    <div class="detail">${detailHtml(d)}</div>
+    <div class="mmenu" hidden>
+      ${['full', 'tabs', 'mini', 'mini3'].map(m =>
+        `<span class="mitem${m === S.mode ? ' on' : ''}" data-mode="${m}">${MODE_NAMES[m]}</span>`).join('')}
+    </div>
+  </div>`;
+}
+function cardHtml(d) {
+  const t = d.data || {}, on = d.status;
+  const rows = (S.selected || []).map(id => {
+    const item = itemOf(id);
+    let v = t[id], sub = '', pct = typeof v === 'number' ? v : null, color = null;
+    if (id === 'cpu') { color = ringColor(CPU, v, 70, 90); sub = t.cores ? `${t.cores} 核` : ''; }
+    else if (id === 'mem_pct') { color = ringColor(MEM, v, 70, 85);
+      sub = t.mem_used != null && t.mem_total ? `${t.mem_used.toFixed(1)} / ${t.mem_total.toFixed(1)} GB` : ''; }
+    else if (id === 'storage_pct') { color = '#F0A35E';
+      sub = t.storage_used != null && t.storage_total ? `${Math.round(t.storage_used)} / ${Math.round(t.storage_total)} GB` : ''; }
+    else if (id === 'battery') { color = battColor(v);
+      sub = t.batt_state ? (t.batt_state === '充电中' ? '⚡ 充电中' : t.batt_state) : ''; }
+    else if (id === 'load') {
+      const inv = t.load_invalid && (v === 0 || v == null);
+      if (inv) { v = null; sub = '持续上报 0 · 已标记不可用'; pct = null; }
+      else if (typeof v === 'number' && t.cores) {
+        pct = v / t.cores * 100; color = ringColor(WARN, pct, 60, 85);
+        sub = `${v.toFixed(1)} / ${t.cores} 核 · 非使用率`;
+      } else sub = '1 分钟均值';
+    }
+    const SHORT = {cpu:'CPU', load:'负载', mem_pct:'内存', storage_pct:'存储',
+                   battery:'电量', mem_free:'内存可用', storage_free:'可用存储'};
+    const label = SHORT[id] || esc(item.label.replace(/（.*?）/, ''));
+    return `<div class="mrow" data-row="${id}"><span class="lab">${label}</span>
+      <div class="bar"><i data-bar style="width:${pct == null ? 0 : Math.min(100, pct)}%;
+        background:${color || 'rgba(255,255,255,.25)'}"></i></div>
+      <span class="val" data-val>${fmtVal(id, v, item)}${sub ? `<small>${esc(sub)}</small>` : ''}</span></div>`;
+  }).join('');
+  const name = devName(d);
+  const hot = typeof t.batt_temp === 'number' && t.batt_temp >= 40;
+  return `<div class="card" data-card="${esc(d.addr)}">
+    <div class="chead">
+      <span class="dot ${d.status === 'online' ? 'ok' : d.status === 'connecting' ? 'warn' : 'off'}"></span>
+      <div><div class="cname">${esc(name)}</div>
+        <div class="cmodel">${esc(t.model || '')} · ${esc(t.os || '')}</div></div>
+      <div class="cextra">${t.batt_temp != null ? `<span class="${hot ? 'hot' : ''}">${fmtVal('batt_temp', t.batt_temp, itemOf('batt_temp'))}</span> · ` : ''}${t.wifi_rssi != null ? t.wifi_rssi + ' dBm' : ''}</div>
+    </div>
+    ${rows || '<div style="margin-top:14px;font-size:11px;color:var(--dim)">还没有监控项 · 在设置中添加</div>'}
+    <div class="cfoot"><span>电池温度 <b>${fmtVal('batt_temp', t.batt_temp, itemOf('batt_temp'))}</b></span>
+      <span>运行 <b>${esc(t.uptime || '—')}</b></span></div>
+  </div>`;
+}
+function render() {
+  if (!S) return;
+  const mode = S.mode, cur = S.devices.find(x => x.addr === S.appearance.tab_device) || S.devices[0];
+  const root = document.getElementById('root');
+  if (mode === 'mini') {
+    root.innerHTML = cur ? miniHtml(cur, false) : '';
+  } else if (mode === 'mini3') {
+    root.innerHTML = `<div class="expand-wrap">
+      <div class="ehead"><span class="ecap">三台并排</span><span style="flex:1"></span>
+        ${segHtml('mini')}
+        <button class="btnpill" data-act="collapse">收起 ⤡</button></div>
+      <div class="mgrid">${S.devices.map(d => miniHtml(d, true)).join('')}</div></div>`;
+  } else if (mode === 'tabs') {
+    root.innerHTML = `<div class="glass" style="width:calc(var(--cardw) + 36px)">
+      <div class="head">
+        <div class="brand"></div><span class="title">设备监控</span>
+        <span class="summary">${S.devices.filter(d => d.status === 'online').length} / ${S.devices.length} 在线</span>
+        <span class="sp"></span>
+        ${segHtml('tabs')}
+        <button class="ib" data-act="settings" title="设置">⚙</button>
+        <button class="ib" data-act="minimize" title="最小化到托盘">–</button>
+        <button class="ib" data-act="quit" title="退出监控">×</button>
+      </div>
+      <div class="tabbar">
+        ${S.devices.map(d => `<span class="dtab${d.addr === (cur && cur.addr) ? ' on' : ''}" data-tab="${esc(d.addr)}">
+          <span class="dot ${d.status === 'online' ? 'ok' : d.status === 'connecting' ? 'warn' : 'bad'}"></span>${esc(devName(d))}</span>`).join('')}
+        <span class="sp"></span><button class="btnpill" data-act="expand">扩展 ⤢</button>
+      </div>
+      <div class="body" style="display:flex;justify-content:center">${cur ? cardHtml(cur) : ''}</div>
+    </div>`;
+  } else { // full
+    root.innerHTML = `<div class="glass">
+      <div class="head">
+        <div class="brand"></div><span class="title">设备监控</span>
+        <span class="summary">${S.devices.filter(d => d.status === 'online').length} / ${S.devices.length} 在线</span>
+        <span class="sp"></span>
+        ${segHtml('full')}
+        <button class="ib" data-act="settings" title="设置">⚙</button>
+        <button class="ib" data-act="minimize" title="最小化到托盘">–</button>
+        <button class="ib" data-act="quit" title="退出监控">×</button>
+      </div>
+      <div class="body"><div class="cardgrid">${S.devices.map(cardHtml).join('')}</div></div>
+    </div>`;
+  }
+  // 数据填充
+  root.querySelectorAll('.mini[data-addr]').forEach(el => {
+    const d = S.devices.find(x => x.addr === el.dataset.addr);
+    if (d) paintMini(el, d);
+  });
+  fitWidth();
+  reportSize();
+}
+// 让玻璃窗口宽度包住内容：迷你最窄 350，标签页不小于卡片宽度
+function fitWidth() {
+  const glass = document.querySelector('#root > .glass, #root > .expand-wrap');
+  if (!glass) return;
+  const minW = glass.classList.contains('mini') ? 360
+    : S.mode === 'tabs' ? S.appearance.card_width + 36 : 0;
+  glass.style.width = 'max-content';
+  const w = Math.ceil(glass.getBoundingClientRect().width);
+  glass.style.width = Math.max(w, minW) + 'px';
+}
+function patch() {
+  if (!S) return;
+  const root = document.getElementById('root');
+  root.querySelectorAll('.mini[data-addr]').forEach(el => {
+    const d = S.devices.find(x => x.addr === el.dataset.addr);
+    if (d) paintMini(el, d);
+  });
+  // 标签栏状态点 / 汇总
+  root.querySelectorAll('.dtab[data-tab]').forEach(el => {
+    const d = S.devices.find(x => x.addr === el.dataset.tab);
+    if (!d) return;
+    const dot = el.querySelector('.dot');
+    dot.className = 'dot ' + (d.status === 'online' ? 'ok' : d.status === 'connecting' ? 'warn' : 'bad');
+  });
+  const summary = root.querySelector('.summary');
+  if (summary) summary.textContent =
+    `${S.devices.filter(d => d.status === 'online').length} / ${S.devices.length} 在线`;
+  root.querySelectorAll('.card[data-card]').forEach(el => {
+    const d = S.devices.find(x => x.addr === el.dataset.card);
+    if (d) el.outerHTML = cardHtml(d);
+  });
+  reportSize();
+}
+
+/* ---------------- 事件 ---------------- */
+document.addEventListener('click', e => {
+  // 点击菜单/切换键以外的地方时收起模式菜单
+  if (!e.target.closest('.mmenu') && !e.target.closest('[data-act="modeMenu"]')) {
+    document.querySelectorAll('.mmenu').forEach(m => m.hidden = true);
+  }
+  const act = e.target.closest('[data-act]');
+  if (act && act.dataset.act === 'modeMenu') {
+    const menu = act.closest('.mini') && act.closest('.mini').querySelector('.mmenu');
+    if (menu) {
+      menu.querySelectorAll('.mitem').forEach(i =>
+        i.classList.toggle('on', i.dataset.mode === S.mode));
+      menu.hidden = !menu.hidden;
+    }
+    return;
+  }
+  if (act && bridge) {
+    ({expand: () => bridge.setMode(S.mode === 'tabs' ? 'full' : S.mode === 'mini' ? 'mini3' : S.mode),
+      collapse: () => bridge.setMode('mini'),
+      pin: () => bridge.togglePin(),
+      minimize: () => bridge.minimize(),
+      quit: () => bridge.quitApp(),
+      settings: () => bridge.openSettings()})[act.dataset.act]();
+    return;
+  }
+  const seg = e.target.closest('[data-mode]');
+  if (seg && bridge) {
+    bridge.setMode(seg.dataset.mode);
+    document.querySelectorAll('.mmenu').forEach(m => m.hidden = true);
+    return;
+  }
+  const tab = e.target.closest('[data-tab]');
+  if (tab && bridge) { bridge.switchDevice(tab.dataset.tab); return; }
+});
+document.addEventListener('dblclick', e => {
+  const tab = e.target.closest('.mtab[data-tab]');
+  if (!tab || tab.querySelector('input')) return;
+  const addr = tab.dataset.tab;
+  const d = S.devices.find(x => x.addr === addr);
+  const old = d ? d.label : '';
+  tab.innerHTML = `<input maxlength="6" value="${esc(old)}">`;
+  let input = tab.querySelector('input');
+  input.focus(); input.select();
+  const done = save => {
+    if (!input) return;
+    const v = save ? input.value.trim().slice(0, 6) : old;
+    input.remove(); input = null;
+    if (save && v && v !== old && bridge) bridge.renameDevice(addr, v);
+    else render();   // 恢复标签显示
+  };
+  input.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter') { ev.preventDefault(); done(true); }
+    if (ev.key === 'Escape') done(false);
+  });
+  input.addEventListener('blur', () => done(true));
+});
+// 空白处按住拖动窗口
+document.addEventListener('mousedown', e => {
+  if (e.button !== 0 || !bridge) return;
+  if (e.target.closest('button,input,.mtab,.dtab,[data-act],.detail,.mmenu,.mitem')) return;
+  bridge.startMove();
+});
+
+/* ---------------- 尺寸上报 ---------------- */
+function reportSize() {
+  const root = document.getElementById('root');
+  if (!root.firstChild) return;
+  const r = root.getBoundingClientRect();
+  const w = Math.ceil(root.scrollWidth), h = Math.ceil(root.scrollHeight);
+  if (bridge && w > 0 && h > 0) bridge.reportSize(w, h);
+}
+window.__applyState = json => {
+  const prev = S;
+  S = json;
+  document.documentElement.style.setProperty('--alpha', String(S.appearance.opacity / 100));
+  document.documentElement.style.setProperty('--cardw', S.appearance.card_width + 'px');
+  document.documentElement.style.setProperty('--appfont', `'${S.appearance.font}'`);
+  if (S.appearance.scale !== 100) {
+    document.body.style.zoom = String(S.appearance.scale / 100);
+  } else {
+    document.body.style.zoom = '';
+  }
+  const key = JSON.stringify([S.mode, S.devices.map(d => [d.addr, d.label, d.status === undefined]),
+    S.selected, S.appearance]);
+  if (key !== structKey) { structKey = key; render(); } else { patch(); }
+};
+</script>
+</body>
+</html>
