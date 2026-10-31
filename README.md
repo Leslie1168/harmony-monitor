@@ -3,6 +3,10 @@
 > Windows 桌面无边框悬浮窗，**无线**实时查看华为鸿蒙设备（HarmonyOS / OpenHarmony）的
 > CPU、内存、存储、电量、温度、Wi-Fi 等运行状态。四种显示模式，最快的指标 1 秒刷新。
 
+**下载**：[Releases](https://github.com/Leslie1168/harmony-monitor/releases/latest) 里的
+`harmony-monitor-*-src.zip`（源码 + `hdc` / `adb` 官方二进制，8 MB），解压后按「快速开始」跑即可。
+想要 git 方式就直接 clone 本仓库。
+
 ![主界面](screenshots/preview.png)
 
 ---
